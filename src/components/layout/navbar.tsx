@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
-import { Shield, Menu, X, Sparkles, LogOut, User } from "lucide-react";
+import { Shield, Menu, X, Sparkles, LogOut, User, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
@@ -13,16 +13,38 @@ const navLinks = [
   { href: "#features", label: "Features" },
   { href: "#how-it-works", label: "How It Works" },
   { href: "/verify", label: "Verify Proof" },
+  { href: "/verifier", label: "Verifier Portal" },
 ];
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
   const { user, loading, signOut } = useAuth();
   const router = useRouter();
 
   const handleSignOut = async () => {
+    setProfileOpen(false);
     await signOut();
     router.push("/");
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setProfileOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const getInitials = (name: string, email: string) => {
+    if (name) {
+      return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    }
+    return email[0].toUpperCase();
   };
 
   return (
@@ -52,20 +74,60 @@ export function Navbar() {
             {loading ? (
               <div className="w-20 h-9 bg-dark-800 rounded-lg animate-pulse" />
             ) : user ? (
-              <>
+              <div className="flex items-center gap-3">
                 <Link href="/vault">
                   <Button size="sm">
                     <Sparkles className="w-4 h-4 mr-2" />
                     My Vault
                   </Button>
                 </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors px-3 py-2"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </>
+                
+                {/* Profile Dropdown */}
+                <div className="relative" ref={profileRef}>
+                  <button
+                    onClick={() => setProfileOpen(!profileOpen)}
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-dark-800 transition-colors"
+                  >
+                    <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                      {getInitials(user.name, user.email)}
+                    </div>
+                    <ChevronDown className={cn("w-4 h-4 text-gray-400 transition-transform", profileOpen && "rotate-180")} />
+                  </button>
+                  
+                  {profileOpen && (
+                    <div className="absolute right-0 mt-2 w-64 bg-dark-900 border border-green-500/20 rounded-xl shadow-xl overflow-hidden">
+                      <div className="px-4 py-3 border-b border-green-500/10">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-medium">
+                            {getInitials(user.name, user.email)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-white truncate">{user.name || 'User'}</p>
+                            <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-2">
+                        <Link 
+                          href="/vault" 
+                          onClick={() => setProfileOpen(false)}
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-dark-800 rounded-lg transition-colors"
+                        >
+                          <User className="w-4 h-4" />
+                          My Vault
+                        </Link>
+                        <button
+                          onClick={handleSignOut}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Sign Out
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             ) : (
               <>
                 <Link href="/login">

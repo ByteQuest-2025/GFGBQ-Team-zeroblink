@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Shield, Lock, Fingerprint, Sparkles, FileCheck, Layers, Code } from "lucide-react";
 
 export function HeroSection() {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    // Small delay to ensure hydration is complete
+    const timer = setTimeout(() => setIsVisible(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <section id="home" className="relative min-h-screen pt-24 pb-12 overflow-hidden bg-dark-950">
       <div className="absolute inset-0 grid-pattern" />
@@ -15,7 +24,7 @@ export function HeroSection() {
         <div className="text-center mb-6 pt-8 md:pt-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
             transition={{ duration: 0.5 }}
           >
             <Badge variant="primary" className="mb-4 md:mb-6">
@@ -27,7 +36,7 @@ export function HeroSection() {
           <motion.h1 
             className="text-3xl sm:text-4xl lg:text-6xl font-bold leading-tight tracking-tight text-white mb-4 md:mb-6"
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
             Zero-Knowledge Identity
@@ -38,7 +47,7 @@ export function HeroSection() {
           <motion.p 
             className="text-gray-400 max-w-2xl mx-auto mb-6 md:mb-8 text-base md:text-lg px-4"
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             Accelerate your verification with ZK that understands privacy and delivers
@@ -48,7 +57,7 @@ export function HeroSection() {
           <motion.div 
             className="flex flex-wrap items-center justify-center gap-4"
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
             <Link href="/generate">
@@ -264,7 +273,7 @@ export function HeroSection() {
               className="absolute top-[6%] left-[8%] glass-card p-3 max-w-[175px]"
               style={{ zIndex: 3 }}
               initial={{ opacity: 0, x: -30, y: -20 }}
-              animate={{ opacity: 1, x: 0, y: 0 }}
+              animate={isVisible ? { opacity: 1, x: 0, y: 0 } : { opacity: 0, x: -30, y: -20 }}
               transition={{ duration: 0.7, delay: 0.6 }}
               whileHover={{ scale: 1.02, y: -2 }}
             >
@@ -285,7 +294,7 @@ export function HeroSection() {
               className="absolute top-[6%] right-[8%] glass-card p-3 max-w-[175px]"
               style={{ zIndex: 3 }}
               initial={{ opacity: 0, x: 30, y: -20 }}
-              animate={{ opacity: 1, x: 0, y: 0 }}
+              animate={isVisible ? { opacity: 1, x: 0, y: 0 } : { opacity: 0, x: 30, y: -20 }}
               transition={{ duration: 0.7, delay: 0.8 }}
               whileHover={{ scale: 1.02, y: -2 }}
             >
@@ -306,7 +315,7 @@ export function HeroSection() {
               className="absolute bottom-[8%] left-[8%] glass-card p-3 max-w-[175px]"
               style={{ zIndex: 3 }}
               initial={{ opacity: 0, x: -30, y: 20 }}
-              animate={{ opacity: 1, x: 0, y: 0 }}
+              animate={isVisible ? { opacity: 1, x: 0, y: 0 } : { opacity: 0, x: -30, y: 20 }}
               transition={{ duration: 0.7, delay: 1.0 }}
               whileHover={{ scale: 1.02, y: -2 }}
             >
@@ -324,7 +333,7 @@ export function HeroSection() {
               className="absolute bottom-[8%] right-[8%] glass-card p-3 max-w-[160px]"
               style={{ zIndex: 3 }}
               initial={{ opacity: 0, x: 30, y: 20 }}
-              animate={{ opacity: 1, x: 0, y: 0 }}
+              animate={isVisible ? { opacity: 1, x: 0, y: 0 } : { opacity: 0, x: 30, y: 20 }}
               transition={{ duration: 0.7, delay: 1.2 }}
               whileHover={{ scale: 1.02, y: -2 }}
             >
@@ -356,7 +365,7 @@ export function HeroSection() {
           <motion.div 
             className="relative w-20 h-20 mx-auto mb-6"
             initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
+            animate={isVisible ? { scale: 1, opacity: 1 } : { scale: 0.8, opacity: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
           >
             <motion.div
@@ -380,7 +389,7 @@ export function HeroSection() {
             <motion.div 
               className="glass-card p-4"
               initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.4, delay: 0.5 }}
             >
               <div className="w-9 h-9 bg-green-500/20 rounded-xl flex items-center justify-center border border-green-500/30 mb-3">
@@ -393,7 +402,7 @@ export function HeroSection() {
             <motion.div 
               className="glass-card p-4"
               initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.4, delay: 0.6 }}
             >
               <div className="w-9 h-9 bg-green-500/20 rounded-xl flex items-center justify-center border border-green-500/30 mb-3">
@@ -406,7 +415,7 @@ export function HeroSection() {
             <motion.div 
               className="glass-card p-4"
               initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.4, delay: 0.7 }}
             >
               <div className="w-9 h-9 bg-green-500/20 rounded-xl flex items-center justify-center border border-green-500/30 mb-3">
@@ -419,7 +428,7 @@ export function HeroSection() {
             <motion.div 
               className="glass-card p-4"
               initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.4, delay: 0.8 }}
             >
               <div className="w-9 h-9 bg-green-500/20 rounded-xl flex items-center justify-center border border-green-500/30 mb-3">
