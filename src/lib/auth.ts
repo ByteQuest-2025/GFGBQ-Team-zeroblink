@@ -12,23 +12,41 @@ export interface AuthResponse {
   error: string | null;
 }
 
+export interface SignUpResponse {
+  success: boolean;
+  needsConfirmation: boolean;
+  error: string | null;
+}
+
 // Sign up with email and password
-export async function signUp(email: string, password: string, name: string): Promise<AuthResponse> {
+export async function signUp(email: string, password: string, name: string): Promise<SignUpResponse> {
   try {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { name }
+        data: { name },
+        emailRedirectTo: `${window.location.origin}/login?confirmed=true`
       }
     });
 
     if (error) {
-      return { user: null, error: error.message };
+      return { success: false, needsConfirmation: false, error: error.message };
     }
 
     if (data.user) {
-      // Create user profile in our users table
+      // Check if email confirmation is required
+      // If identities array is empty, user already exists
+      if (data.user.identities?.length === 0) {
+        return { success: false, needsConfirmation: false, error: 'An account with this email already exists' };
+      }
+      
+      // User created but needs email confirmation
+      if (!data.session) {
+        return { success: true, needsConfirmation: true, error: null };
+      }
+
+      // If session exists (email confirmation disabled in Supabase), create profile
       const { error: profileError } = await supabase
         .from('users')
         .insert([{
@@ -38,23 +56,15 @@ export async function signUp(email: string, password: string, name: string): Pro
         }]);
 
       if (profileError) {
-        console.error('Profile creation error:', profileError);
+        console.error('Profile creation error:', profileError.message);
       }
 
-      return {
-        user: {
-          id: data.user.id,
-          email: data.user.email || '',
-          name: name,
-          created_at: data.user.created_at,
-        },
-        error: null
-      };
+      return { success: true, needsConfirmation: false, error: null };
     }
 
-    return { user: null, error: 'Sign up failed' };
+    return { success: false, needsConfirmation: false, error: 'Sign up failed' };
   } catch (err) {
-    return { user: null, error: 'An unexpected error occurred' };
+    return { success: false, needsConfirmation: false, error: 'An unexpected error occurred' };
   }
 }
 
@@ -108,26 +118,25 @@ export async function signOut(): Promise<{ error: string | null }> {
   }
 }
 
-// Get current user
+// Get current user - fast version using cached session
 export async function getCurrentUser(): Promise<User | null> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    // Use getSession which is faster (uses cached data)
+    const { data: { session } } = await supabase.auth.getSession();
     
-    if (!user) return null;
+    if (!session?.user) return null;
 
-    const { data: profile } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-
+    const user = session.user;
+    
+    // Return user immediately with metadata, don't wait for profile
     return {
       id: user.id,
       email: user.email || '',
-      name: profile?.name || user.user_metadata?.name || '',
+      name: user.user_metadata?.name || '',
       created_at: user.created_at,
     };
   } catch (err) {
+    console.error('getCurrentUser error:', err);
     return null;
   }
 }
@@ -136,16 +145,10 @@ export async function getCurrentUser(): Promise<User | null> {
 export function onAuthStateChange(callback: (user: User | null) => void) {
   return supabase.auth.onAuthStateChange(async (_event, session) => {
     if (session?.user) {
-      const { data: profile } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-
       callback({
         id: session.user.id,
         email: session.user.email || '',
-        name: profile?.name || session.user.user_metadata?.name || '',
+        name: session.user.user_metadata?.name || '',
         created_at: session.user.created_at,
       });
     } else {

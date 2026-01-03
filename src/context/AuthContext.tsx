@@ -7,7 +7,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (email: string, password: string, name: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, name: string) => Promise<{ success: boolean; needsConfirmation: boolean; error: string | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -18,19 +18,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial user
-    getCurrentUser().then((user) => {
-      setUser(user);
-      setLoading(false);
-    });
+    let mounted = true;
+    
+    // Get initial user with short timeout
+    const initAuth = async () => {
+      try {
+        // Short timeout to prevent blocking
+        const timeoutPromise = new Promise<null>((resolve) => {
+          setTimeout(() => resolve(null), 2000); // 2 second timeout
+        });
+        
+        const userPromise = getCurrentUser();
+        const result = await Promise.race([userPromise, timeoutPromise]);
+        
+        if (mounted) {
+          setUser(result);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Auth init error:', error);
+        if (mounted) {
+          setUser(null);
+          setLoading(false);
+        }
+      }
+    };
+    
+    initAuth();
 
-    // Listen for auth changes
+    // Listen for auth changes - this will update user if auth state changes
     const { data: { subscription } } = onAuthStateChange((user) => {
-      setUser(user);
-      setLoading(false);
+      if (mounted) {
+        setUser(user);
+        setLoading(false);
+      }
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -45,10 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const handleSignUp = async (email: string, password: string, name: string) => {
     const result = await signUp(email, password, name);
-    if (result.user) {
-      setUser(result.user);
-    }
-    return { error: result.error };
+    return { success: result.success, needsConfirmation: result.needsConfirmation, error: result.error };
   };
 
   const handleSignOut = async () => {
