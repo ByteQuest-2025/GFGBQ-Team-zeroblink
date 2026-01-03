@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { GlowingCard } from "@/components/ui/glowing-card";
 import { ZKAnimation } from "@/components/ui/zk-animation";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { performOCR } from "@/lib/ocr";
@@ -16,7 +17,6 @@ import {
   FileText,
   Upload,
   CheckCircle,
-  Loader2,
   Sparkles,
   GraduationCap,
   CreditCard,
@@ -63,7 +63,7 @@ const proofTypes = [
   },
 ];
 
-export default function GeneratePage() {
+function GenerateContent() {
   const [proofType, setProofType] = useState<ProofType>(null);
   const [step, setStep] = useState<Step>("select");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -73,16 +73,9 @@ export default function GeneratePage() {
   const [extractedData, setExtractedData] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
 
   const selectedProofType = proofTypes.find((t) => t.id === proofType);
-
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/login");
-    }
-  }, [user, authLoading, router]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -189,6 +182,10 @@ export default function GeneratePage() {
           protocol: zkProof.proof.protocol,
           curve: zkProof.proof.curve,
           timestamp: zkProof.timestamp,
+          // Store full proof for verification
+          pi_a: zkProof.proof.pi_a,
+          pi_b: zkProof.proof.pi_b,
+          pi_c: zkProof.proof.pi_c,
         },
         expires_at: expiresAt.toISOString(),
         status: "active",
@@ -221,14 +218,6 @@ export default function GeneratePage() {
     setStatusText("");
     setExtractedData({});
   };
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-dark-950 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-green-400 animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-dark-950">
@@ -439,5 +428,13 @@ export default function GeneratePage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function GeneratePage() {
+  return (
+    <AuthGuard>
+      <GenerateContent />
+    </AuthGuard>
   );
 }

@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { GlowingCard } from "@/components/ui/glowing-card";
 import { useAuth } from "@/context/AuthContext";
-import { Shield, Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
+import { Shield, Mail, Lock, Loader2, Eye, EyeOff, CheckCircle } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -14,8 +14,16 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { signIn } = useAuth();
+
+  useEffect(() => {
+    if (searchParams.get('confirmed') === 'true') {
+      setConfirmed(true);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +52,14 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-white mb-2">Welcome back</h1>
           <p className="text-gray-400">Sign in to access your vault</p>
         </div>
+        
+        {confirmed && (
+          <div className="mb-6 bg-green-500/10 border border-green-500/20 rounded-xl p-4 flex items-center gap-3">
+            <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+            <p className="text-sm text-green-400">Email verified successfully! You can now sign in.</p>
+          </div>
+        )}
+        
         <GlowingCard className="p-6">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>

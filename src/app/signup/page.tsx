@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { GlowingCard } from "@/components/ui/glowing-card";
 import { useAuth } from "@/context/AuthContext";
-import { Shield, Mail, Lock, User, Loader2, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Shield, Mail, Lock, User, Loader2, Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react";
 
 export default function SignupPage() {
   const [name, setName] = useState("");
@@ -16,6 +16,7 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
   const router = useRouter();
   const { signUp } = useAuth();
 
@@ -49,8 +50,16 @@ export default function SignupPage() {
 
     setLoading(true);
     const result = await signUp(email, password, name);
-    if (result.error) { setError(result.error); setLoading(false); } 
-    else { router.push("/vault"); }
+    
+    if (result.error) { 
+      setError(result.error); 
+      setLoading(false); 
+    } else if (result.needsConfirmation) {
+      setEmailSent(true);
+      setLoading(false);
+    } else {
+      router.push("/vault");
+    }
   };
 
   const passwordStrength = () => {
@@ -61,6 +70,43 @@ export default function SignupPage() {
     if (/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/`~]/.test(password)) strength++;
     return strength;
   };
+
+  // Email confirmation sent screen
+  if (emailSent) {
+    return (
+      <div className="min-h-screen bg-dark-950 flex items-center justify-center px-4 py-8">
+        <div className="absolute inset-0 grid-pattern opacity-30" />
+        <div className="relative w-full max-w-md z-10">
+          <GlowingCard className="p-8 text-center">
+            <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Mail className="w-8 h-8 text-green-400" />
+            </div>
+            <h1 className="text-2xl font-bold text-white mb-3">Check your email</h1>
+            <p className="text-gray-400 mb-6">
+              We sent a confirmation link to<br />
+              <span className="text-white font-medium">{email}</span>
+            </p>
+            <div className="bg-dark-800 rounded-xl p-4 mb-6">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-gray-300 text-left">
+                  Click the link in your email to verify your account and start using AkshayaVault.
+                </p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-500 mb-4">
+              Did not receive the email? Check your spam folder.
+            </p>
+            <Link href="/login">
+              <Button variant="outline" className="w-full">
+                Back to Sign In
+              </Button>
+            </Link>
+          </GlowingCard>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-dark-950 flex items-center justify-center px-4 py-8">
