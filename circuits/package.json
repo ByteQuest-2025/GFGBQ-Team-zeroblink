@@ -1,0 +1,15 @@
+{
+  "name": "akshayavault-circuits",
+  "version": "1.0.0",
+  "description": "ZK Circuits for AkshayaVault",
+  "scripts": {
+    "build:age": "bash build.sh ageVerification",
+    "build:income": "bash build.sh incomeRange",
+    "build:degree": "bash build.sh degreeVerification",
+    "build:pan": "bash build.sh panVerification",
+    "build:all": "npm run build:age && npm run build:income && npm run build:degree && npm run build:pan"
+  },
+  "dependencies": {
+    "circomlib": "^2.0.5"
+  }
+}

@@ -1,0 +1,5 @@
+# This folder will contain compiled circuit files after running build scripts
+# Files needed per circuit:
+# - <circuit_name>.wasm
+# - <circuit_name>_final.zkey
+# - verification_key.json
