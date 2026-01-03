@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { GlowingCard } from "@/components/ui/glowing-card";
 import { useAuth } from "@/context/AuthContext";
 import { Shield, Mail, Lock, Loader2, Eye, EyeOff, CheckCircle } from "lucide-react";
 
-export default function LoginPage() {
+function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -90,5 +90,17 @@ export default function LoginPage() {
         </GlowingCard>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-dark-950 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-green-400 animate-spin" />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }
