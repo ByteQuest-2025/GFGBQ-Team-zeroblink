@@ -34,7 +34,7 @@ const proofTypes = [
     icon: QrCode,
     title: "Aadhaar QR Code",
     description: "Prove age, address, or identity",
-    acceptedFormats: ".png,.jpg,.jpeg",
+    acceptedFormats: ".png,.jpg,.jpeg,.pdf",
     attribute: "Age > 18",
   },
   {
