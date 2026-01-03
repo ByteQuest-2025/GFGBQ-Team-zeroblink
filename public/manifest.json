@@ -1,0 +1,17 @@
+{
+  "name": "AkshayaVault",
+  "short_name": "AkshayaVault",
+  "description": "Self-Sovereign Financial Identity using Zero-Knowledge Proofs",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#030806",
+  "theme_color": "#22c55e",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
