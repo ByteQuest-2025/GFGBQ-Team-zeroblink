@@ -2,10 +2,34 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
 let supabaseInstance: SupabaseClient | null = null
 
+// Create a mock client for SSR/build time
+function createMockClient(): SupabaseClient {
+  const mockAuth = {
+    signUp: async () => ({ data: { user: null, session: null }, error: null }),
+    signInWithPassword: async () => ({ data: { user: null, session: null }, error: null }),
+    signOut: async () => ({ error: null }),
+    getSession: async () => ({ data: { session: null }, error: null }),
+    getUser: async () => ({ data: { user: null }, error: null }),
+    onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+  }
+  
+  const mockFrom = () => ({
+    select: () => ({ eq: () => ({ single: async () => ({ data: null, error: null }) }) }),
+    insert: async () => ({ data: null, error: null }),
+    update: async () => ({ data: null, error: null }),
+    delete: async () => ({ data: null, error: null }),
+  })
+  
+  return {
+    auth: mockAuth,
+    from: mockFrom,
+  } as unknown as SupabaseClient
+}
+
 export function getSupabase(): SupabaseClient {
+  // During SSR/build, return mock client
   if (typeof window === 'undefined') {
-    // During SSR/build, return a dummy that won't be used
-    return {} as SupabaseClient
+    return createMockClient()
   }
   
   if (supabaseInstance) return supabaseInstance
@@ -15,7 +39,7 @@ export function getSupabase(): SupabaseClient {
   
   if (!supabaseUrl || !supabaseAnonKey) {
     console.error('Missing Supabase environment variables')
-    return {} as SupabaseClient
+    return createMockClient()
   }
   
   supabaseInstance = createClient(supabaseUrl, supabaseAnonKey)
