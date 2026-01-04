@@ -18,15 +18,28 @@ export interface SignUpResponse {
   error: string | null;
 }
 
+// Get the base URL for redirects
+function getBaseUrl(): string {
+  // Use environment variable if set, otherwise use window.location.origin
+  if (typeof window !== 'undefined') {
+    // In production, use the actual origin
+    // This handles both localhost and deployed URLs correctly
+    return window.location.origin;
+  }
+  return process.env.NEXT_PUBLIC_SITE_URL || 'https://akshayavault.vercel.app';
+}
+
 // Sign up with email and password
 export async function signUp(email: string, password: string, name: string): Promise<SignUpResponse> {
   try {
+    const redirectUrl = `${getBaseUrl()}/login?confirmed=true`;
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { name },
-        emailRedirectTo: `${window.location.origin}/login?confirmed=true`
+        emailRedirectTo: redirectUrl
       }
     });
 

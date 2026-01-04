@@ -105,6 +105,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 # Google Gemini API (Required for document validation)
 NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
+
+# Site URL (Optional - for email redirects, defaults to akshayavault.vercel.app)
+# NEXT_PUBLIC_SITE_URL=https://your-domain.com
 ```
 
 #### Getting Your API Keys:
@@ -114,6 +117,9 @@ NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
 2. Select your project (or create one)
 3. Go to Settings → API
 4. Copy "Project URL" and "anon public" key
+5. **Important:** Go to Settings → Authentication → URL Configuration
+   - Set Site URL to your production URL (e.g., `https://akshayavault.vercel.app`)
+   - Add your production URL + `/login` to Redirect URLs
 
 **Gemini API:**
 1. Go to [Google AI Studio](https://aistudio.google.com/apikey)
@@ -420,17 +426,6 @@ const result = await vault.verifyProof(proofId);
 - **Compliance Ready**: Built-in audit trails and logging
 - **Multi-Platform**: Web, mobile, and backend support
 - **Cost Effective**: Pay-per-verification pricing model
-
----
-
-## Contributing
-
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing`)
-5. Open Pull Request
-
 ---
 
 ## Team zeroblink

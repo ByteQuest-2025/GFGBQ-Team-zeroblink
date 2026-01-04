@@ -9,46 +9,83 @@ interface ValidationResult {
   message: string;
 }
 
+const DOCUMENT_TYPE_NAMES: Record<DocumentType, string> = {
+  aadhaar: 'Aadhaar Card',
+  pan: 'PAN Card',
+  marksheet: 'Marksheet/Grade Sheet',
+  salary_slip: 'Salary Slip'
+};
+
 const DOCUMENT_PROMPTS: Record<DocumentType, string> = {
-  aadhaar: `Analyze this image. Is it an Indian Aadhaar card?
+  aadhaar: `You are a document verification expert. Analyze this image carefully.
 
-Look for: UIDAI logo, 12-digit number, photo, name, DOB, address, QR code.
+TASK: Determine if this is an Indian Aadhaar card.
 
-RESPOND ONLY WITH THIS JSON (no other text):
-{"isValid": true, "confidence": 85, "detectedType": "aadhaar card", "reason": "contains UIDAI logo and 12-digit number"}
+AADHAAR CARD CHARACTERISTICS:
+- UIDAI logo or "Unique Identification Authority of India" text
+- 12-digit Aadhaar number (format: XXXX XXXX XXXX)
+- Person's photograph
+- Name, Date of Birth, Gender
+- Address details
+- QR code (usually present)
+- "Government of India" text
 
-If NOT an Aadhaar card:
-{"isValid": false, "confidence": 90, "detectedType": "what you see", "reason": "why it's not aadhaar"}`,
+IMPORTANT: If this is a marksheet, resume, salary slip, PAN card, or any other document - it is NOT an Aadhaar card.
 
-  pan: `Analyze this image. Is it an Indian PAN card?
+Respond with ONLY this JSON format:
+{"isValid": true/false, "confidence": 0-100, "detectedType": "what document this actually is", "reason": "brief explanation"}`,
 
-Look for: "INCOME TAX DEPARTMENT", 10-character PAN (AAAAA0000A format), photo, name, DOB.
+  pan: `You are a document verification expert. Analyze this image carefully.
 
-RESPOND ONLY WITH THIS JSON (no other text):
-{"isValid": true, "confidence": 85, "detectedType": "pan card", "reason": "contains PAN number format"}
+TASK: Determine if this is an Indian PAN card.
 
-If NOT a PAN card:
-{"isValid": false, "confidence": 90, "detectedType": "what you see", "reason": "why it's not pan"}`,
+PAN CARD CHARACTERISTICS:
+- "INCOME TAX DEPARTMENT" or "GOVT. OF INDIA" header
+- 10-character PAN number (format: AAAAA0000A - 5 letters, 4 numbers, 1 letter)
+- Person's photograph
+- Name, Father's name, Date of Birth
+- Signature
+- Hologram (on physical cards)
 
-  marksheet: `Analyze this image. Is it an educational marksheet/grade sheet?
+IMPORTANT: If this is a marksheet, resume, salary slip, Aadhaar card, or any other document - it is NOT a PAN card.
 
-Look for: institution name, student name, subjects with marks/grades, total/percentage/CGPA.
+Respond with ONLY this JSON format:
+{"isValid": true/false, "confidence": 0-100, "detectedType": "what document this actually is", "reason": "brief explanation"}`,
 
-RESPOND ONLY WITH THIS JSON (no other text):
-{"isValid": true, "confidence": 85, "detectedType": "marksheet", "reason": "contains grades and institution name"}
+  marksheet: `You are a document verification expert. Analyze this image carefully.
 
-If NOT a marksheet:
-{"isValid": false, "confidence": 90, "detectedType": "what you see", "reason": "why it's not marksheet"}`,
+TASK: Determine if this is an educational marksheet or grade sheet.
 
-  salary_slip: `Analyze this image. Is it a salary slip/pay slip?
+MARKSHEET CHARACTERISTICS:
+- Educational institution name/logo (university, college, board)
+- Student name and roll number
+- List of subjects with marks/grades
+- Total marks, percentage, or CGPA
+- Examination name and year
+- Official seal or signature
 
-Look for: company name, employee name, pay period, earnings breakdown, deductions, net pay.
+IMPORTANT: If this is an Aadhaar card, PAN card, salary slip, resume, or any other document - it is NOT a marksheet.
 
-RESPOND ONLY WITH THIS JSON (no other text):
-{"isValid": true, "confidence": 85, "detectedType": "salary slip", "reason": "contains salary components"}
+Respond with ONLY this JSON format:
+{"isValid": true/false, "confidence": 0-100, "detectedType": "what document this actually is", "reason": "brief explanation"}`,
 
-If NOT a salary slip:
-{"isValid": false, "confidence": 90, "detectedType": "what you see", "reason": "why it's not salary slip"}`
+  salary_slip: `You are a document verification expert. Analyze this image carefully.
+
+TASK: Determine if this is a salary slip or pay slip.
+
+SALARY SLIP CHARACTERISTICS:
+- Company/employer name and logo
+- Employee name and ID
+- Pay period (month/year)
+- Earnings breakdown (Basic, HRA, DA, allowances)
+- Deductions (PF, ESI, TDS, etc.)
+- Net pay/take-home salary
+- Usually has a tabular format
+
+IMPORTANT: If this is an Aadhaar card, PAN card, marksheet, resume, or any other document - it is NOT a salary slip.
+
+Respond with ONLY this JSON format:
+{"isValid": true/false, "confidence": 0-100, "detectedType": "what document this actually is", "reason": "brief explanation"}`
 };
 
 export async function validateDocument(
@@ -56,14 +93,15 @@ export async function validateDocument(
   expectedType: DocumentType
 ): Promise<ValidationResult> {
   const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  const expectedTypeName = DOCUMENT_TYPE_NAMES[expectedType];
   
   if (!apiKey) {
-    console.warn('Gemini API key not configured, skipping validation');
+    console.warn('Gemini API key not configured');
     return {
-      isValid: true,
+      isValid: false,
       confidence: 0,
       detectedType: 'unknown',
-      message: 'Validation skipped - API key not configured'
+      message: 'Document validation is not configured. Please contact support.'
     };
   }
 
@@ -84,6 +122,8 @@ export async function validateDocument(
     if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(mimeType)) {
       mimeType = 'image/jpeg';
     }
+    
+    console.log(`Validating document: expecting ${expectedType}`);
     
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
@@ -115,71 +155,95 @@ export async function validateDocument(
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       console.error('Gemini API error details:', errorData);
-      throw new Error(`Gemini API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+      
+      // Don't allow proceeding on API errors - require validation
+      return {
+        isValid: false,
+        confidence: 0,
+        detectedType: 'unknown',
+        message: 'Unable to validate document. Please try again or check your internet connection.'
+      };
     }
 
     const data = await response.json();
     let text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     
-    // Debug: log the response
     console.log('Gemini raw response:', text);
     
-    // Clean up the text - remove escaped quotes if the whole thing is a string
-    if (text.startsWith('"') && text.includes('\\"')) {
-      text = text.slice(1, -1).replace(/\\"/g, '"');
+    // Clean up the text
+    text = text.trim();
+    if (text.startsWith('"') && text.endsWith('"')) {
+      text = text.slice(1, -1).replace(/\\"/g, '"').replace(/\\n/g, '\n');
     }
     
-    // Parse JSON from response - try multiple patterns
-    let result;
+    // Parse JSON from response
+    let result = null;
+    
+    // Try direct parse first
     try {
-      // Try direct parse first
       result = JSON.parse(text);
     } catch {
       // Try to extract JSON from markdown code block
-      let jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
-      if (jsonMatch) {
-        result = JSON.parse(jsonMatch[1]);
-      } else {
-        // Try to find JSON object in text
-        jsonMatch = text.match(/\{[\s\S]*\}/);
+      const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (codeBlockMatch) {
+        try {
+          result = JSON.parse(codeBlockMatch[1].trim());
+        } catch {}
+      }
+      
+      // Try to find JSON object in text
+      if (!result) {
+        const jsonMatch = text.match(/\{[\s\S]*?\}/);
         if (jsonMatch) {
-          result = JSON.parse(jsonMatch[0]);
+          try {
+            result = JSON.parse(jsonMatch[0]);
+          } catch {}
         }
       }
     }
     
     if (!result) {
       console.error('Could not parse JSON from response:', text);
-      // If we can't parse, check for keywords in the response
-      const lowerText = text.toLowerCase();
-      const isLikelyValid = lowerText.includes('yes') || 
-                           lowerText.includes('valid') || 
-                           lowerText.includes('appears to be') ||
-                           lowerText.includes('this is');
       return {
-        isValid: isLikelyValid,
-        confidence: isLikelyValid ? 70 : 30,
+        isValid: false,
+        confidence: 0,
         detectedType: 'unknown',
-        message: isLikelyValid ? 'Document appears valid' : 'Could not verify document type'
+        message: 'Unable to analyze document. Please ensure the image is clear and try again.'
       };
     }
     
-    return {
-      isValid: result.isValid === true && result.confidence >= 70,
-      confidence: result.confidence || 0,
-      detectedType: result.detectedType || 'unknown',
-      message: result.isValid 
-        ? `Document verified as ${expectedType}` 
-        : `This doesn't appear to be a valid ${expectedType}. Detected: ${result.detectedType}. ${result.reason || ''}`
-    };
+    console.log('Parsed validation result:', result);
+    
+    // Strict validation: isValid must be explicitly true AND confidence must be >= 60
+    const isDocumentValid = result.isValid === true && (result.confidence || 0) >= 60;
+    
+    if (isDocumentValid) {
+      return {
+        isValid: true,
+        confidence: result.confidence || 0,
+        detectedType: result.detectedType || expectedType,
+        message: `Document verified as ${expectedTypeName}`
+      };
+    } else {
+      // Document doesn't match expected type
+      const detectedType = result.detectedType || 'unknown document';
+      const reason = result.reason || '';
+      
+      return {
+        isValid: false,
+        confidence: result.confidence || 0,
+        detectedType: detectedType,
+        message: `This doesn't appear to be a ${expectedTypeName}. ${detectedType !== 'unknown document' ? `Detected: ${detectedType}.` : ''} ${reason}`.trim()
+      };
+    }
   } catch (error) {
     console.error('Document validation error:', error);
-    // On error, allow proceeding but warn
+    // Don't allow proceeding on errors - require successful validation
     return {
-      isValid: true,
+      isValid: false,
       confidence: 0,
       detectedType: 'unknown',
-      message: 'Could not validate document, proceeding with caution'
+      message: 'Document validation failed. Please try again.'
     };
   }
 }
