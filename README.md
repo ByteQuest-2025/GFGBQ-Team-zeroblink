@@ -23,6 +23,10 @@ The absence of a user-owned financial identity system limits trust, privacy, and
 
 Self-Sovereign Financial Identity (SSFI) Platform using Zero-Knowledge Proofs
 
+<p align="center">
+  <img src="public/poster.png" alt="AkshayaVault Poster" width="800"/>
+</p>
+
 ---
 
 ## Team zeroblink
