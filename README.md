@@ -1,22 +1,62 @@
+# Problem Statement
+
+**PS 14: Self-Sovereign Financial Identity (SSFI) - Giving Users Ownership of Their Financial Identity**
+
+In today's digital financial ecosystem, an individual's financial identity is highly fragmented across multiple entities such as banks, fintech platforms, lenders, insurers, and government systems. Each institution maintains its own isolated records, forcing users to repeatedly submit sensitive information during onboarding and verification processes.
+
+As a result, users have little to no control over:
+- How their financial data is shared
+- Who can access their information
+- How long their data is stored or reused
+
+This fragmentation leads to:
+- Friction and delays in onboarding
+- Increased risk of data breaches and fraud
+- Repeated KYC processes
+- Exclusion of individuals who cannot consistently prove financial credibility
+
+The absence of a user-owned financial identity system limits trust, privacy, and financial inclusion. There is a pressing need for a Self-Sovereign Financial Identity (SSFI) solution that empowers individuals to own, manage, and selectively share their financial identity in a secure, privacy-preserving, and verifiable manner.
+
+---
+
 # AkshayaVault
 
 Self-Sovereign Financial Identity (SSFI) Platform using Zero-Knowledge Proofs
 
-Team: zeroblink
+---
+
+## Team zeroblink
+
+Built by [@Sanath0106](https://github.com/Sanath0106) (Sanath R) and [@jetsu03](https://github.com/jetsu03) (Neha Honniganur)
+
+GFG ByteQuest Hackathon 2025
+
+---
+
+## Deployed Link
 
 **Live Demo:** [akshayavault.vercel.app](https://akshayavault.vercel.app/)
 
-**Project Resources:** [Google Drive](https://drive.google.com/drive/folders/1kueQyNmRsJY3rx_jWIMz4su86T2Lr5Tv?usp=sharing) (Contains PPT & Video Demo)
+---
+
+## Project Resources
+
+| Resource | Link |
+|----------|------|
+| Video Link | [Google Drive](https://drive.google.com/drive/folders/1kueQyNmRsJY3rx_jWIMz4su86T2Lr5Tv?usp=sharing) |
+| PPT Link | [Google Drive](https://drive.google.com/drive/folders/1kueQyNmRsJY3rx_jWIMz4su86T2Lr5Tv?usp=sharing) |
+
+---
+
+<p align="center">
+  <img src="public/ZKP.png" alt="Zero-Knowledge Proof Concept" width="600"/>
+</p>
 
 ---
 
 ## Overview
 
 AkshayaVault is a privacy-preserving identity verification platform that enables users to prove claims about their documents (age, income, education, tax compliance) without revealing the underlying personal data. Built with real ZK circuits using Groth16 proving system.
-
-<p align="center">
-  <img src="public/ZKP.png" alt="Zero-Knowledge Proof Concept" width="600"/>
-</p>
 
 ## Live Demo
 
@@ -332,7 +372,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
          └─────────────────┘
 ```
 
-
+---
 
 ## ZK Proof Generation Flow
 
@@ -426,10 +466,3 @@ const result = await vault.verifyProof(proofId);
 - **Compliance Ready**: Built-in audit trails and logging
 - **Multi-Platform**: Web, mobile, and backend support
 - **Cost Effective**: Pay-per-verification pricing model
----
-
-## Team zeroblink
-
-Built by [@Sanath0106](https://github.com/Sanath0106) (Sanath R) and [@jetsu03](https://github.com/jetsu03) (Neha Honniganur)
-
-GFG ByteQuest Hackathon 2025
