@@ -11,6 +11,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { performOCR } from "@/lib/ocr";
 import { generateZKProof } from "@/lib/zk-proof";
+import { validateDocument, fileToBase64, DocumentType } from "@/lib/document-validator";
 import {
   Shield,
   QrCode,
@@ -23,10 +24,11 @@ import {
   X,
   AlertTriangle,
   FileCheck,
+  ScanSearch,
 } from "lucide-react";
 
 type ProofType = "aadhaar" | "salary" | "marksheet" | "pan" | null;
-type Step = "select" | "upload" | "ocr" | "zkproof" | "complete" | "error";
+type Step = "select" | "upload" | "validating" | "ocr" | "zkproof" | "complete" | "error";
 
 const proofTypes = [
   {
@@ -119,17 +121,43 @@ function GenerateContent() {
   const processDocument = async () => {
     if (!uploadedFile || !proofType) return;
     
-    setStep("ocr");
+    setStep("validating");
     setProgress(0);
-    setStatusText("Initializing document processing...");
+    setStatusText("Analyzing document with AI...");
 
     try {
+      // Step 0: Validate document type using Gemini
+      const imageBase64 = await fileToBase64(uploadedFile);
+      
+      // Map proofType to DocumentType
+      const docTypeMap: Record<string, DocumentType> = {
+        aadhaar: 'aadhaar',
+        salary: 'salary_slip',
+        marksheet: 'marksheet',
+        pan: 'pan',
+      };
+      
+      const validationResult = await validateDocument(imageBase64, docTypeMap[proofType]);
+      setProgress(15);
+      
+      if (!validationResult.isValid) {
+        setErrorMessage(validationResult.message);
+        setStep("error");
+        return;
+      }
+      
+      setStatusText(`Document verified (${validationResult.confidence}% confidence)`);
+      await new Promise(r => setTimeout(r, 500)); // Brief pause to show validation success
+
       // Step 1: OCR Processing
+      setStep("ocr");
+      setStatusText("Extracting document data...");
+      
       const ocrResult = await performOCR(
         uploadedFile,
         proofType,
         (prog, status) => {
-          setProgress(prog * 0.5); // OCR is 50% of total
+          setProgress(15 + prog * 0.35); // OCR is 35% of total (15-50%)
           setStatusText(status);
         }
       );
@@ -348,12 +376,12 @@ function GenerateContent() {
           </div>
         )}
 
-        {(step === "ocr" || step === "zkproof") && (
+        {(step === "validating" || step === "ocr" || step === "zkproof") && (
           <div className="text-center py-8">
             <ZKAnimation progress={progress} status={statusText} />
             
             <h1 className="text-2xl font-bold text-white mb-2 mt-8">
-              {step === "ocr" ? "Processing Document" : "Generating ZK Proof"}
+              {step === "validating" ? "Validating Document" : step === "ocr" ? "Processing Document" : "Generating ZK Proof"}
             </h1>
             <p className="text-gray-400 mb-6">{statusText}</p>
             
@@ -369,6 +397,15 @@ function GenerateContent() {
                 />
               </div>
             </div>
+
+            {step === "validating" && (
+              <div className="mt-6 p-4 bg-dark-900/50 rounded-xl border border-green-500/10 max-w-sm mx-auto">
+                <div className="flex items-center justify-center gap-2 text-gray-400">
+                  <ScanSearch className="w-4 h-4" />
+                  <p className="text-xs font-mono">AI Document Verification</p>
+                </div>
+              </div>
+            )}
 
             {step === "zkproof" && (
               <div className="mt-6 p-4 bg-dark-900/50 rounded-xl border border-green-500/10 max-w-sm mx-auto">
@@ -388,8 +425,11 @@ function GenerateContent() {
             <div className="w-24 h-24 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
               <AlertTriangle className="w-12 h-12 text-red-400" />
             </div>
-            <h1 className="text-2xl font-bold text-white mb-2">Validation Failed</h1>
-            <p className="text-gray-400 mb-8 max-w-md mx-auto">{errorMessage}</p>
+            <h1 className="text-2xl font-bold text-white mb-2">Document Validation Failed</h1>
+            <p className="text-gray-400 mb-4 max-w-md mx-auto">{errorMessage}</p>
+            <p className="text-sm text-gray-500 mb-8 max-w-md mx-auto">
+              Please ensure you upload the correct document type that matches your selection.
+            </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button variant="outline" size="lg" onClick={() => { setStep("upload"); setUploadedFile(null); setErrorMessage(""); }}>
                 Try Again
