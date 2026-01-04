@@ -2,7 +2,6 @@
 
 import { useState, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { GlowingCard } from "@/components/ui/glowing-card";
 import { ZKAnimation } from "@/components/ui/zk-animation";
@@ -36,7 +35,7 @@ const proofTypes = [
     icon: QrCode,
     title: "Aadhaar QR Code",
     description: "Prove age, address, or identity",
-    acceptedFormats: ".png,.jpg,.jpeg,.pdf",
+    acceptedFormats: ".png,.jpg,.jpeg",
     attribute: "Age > 18",
   },
   {
@@ -44,7 +43,7 @@ const proofTypes = [
     icon: FileText,
     title: "Salary Slip",
     description: "Prove income range",
-    acceptedFormats: ".pdf,.png,.jpg,.jpeg",
+    acceptedFormats: ".png,.jpg,.jpeg",
     attribute: "Income > 50,000/mo",
   },
   {
@@ -52,7 +51,7 @@ const proofTypes = [
     icon: GraduationCap,
     title: "Marksheet",
     description: "Prove education credentials",
-    acceptedFormats: ".pdf,.png,.jpg,.jpeg",
+    acceptedFormats: ".png,.jpg,.jpeg",
     attribute: "Degree Verified",
   },
   {
@@ -60,7 +59,7 @@ const proofTypes = [
     icon: CreditCard,
     title: "PAN Card",
     description: "Prove tax compliance",
-    acceptedFormats: ".png,.jpg,.jpeg,.pdf",
+    acceptedFormats: ".png,.jpg,.jpeg",
     attribute: "Tax Compliant",
   },
 ];
@@ -74,7 +73,6 @@ function GenerateContent() {
   const [statusText, setStatusText] = useState("");
   const [extractedData, setExtractedData] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const router = useRouter();
   const { user } = useAuth();
 
   const selectedProofType = proofTypes.find((t) => t.id === proofType);

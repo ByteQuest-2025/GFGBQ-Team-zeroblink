@@ -4,6 +4,10 @@ Self-Sovereign Financial Identity (SSFI) Platform using Zero-Knowledge Proofs
 
 Team: zeroblink
 
+**Live Demo:** [akshayavault.vercel.app](https://akshayavault.vercel.app/)
+
+**Project Resources:** [Google Drive](https://drive.google.com/drive/folders/1kueQyNmRsJY3rx_jWIMz4su86T2Lr5Tv?usp=sharing) (Contains PPT & Video Demo)
+
 ---
 
 ## Overview
@@ -17,10 +21,12 @@ AkshayaVault is a privacy-preserving identity verification platform that enables
 ## Live Demo
 
 The platform demonstrates a complete DigiLocker-style verification flow:
-1. User uploads document and generates ZK proof
-2. Verifier (bank, government) creates verification request
-3. User approves sharing their proof
-4. Verifier cryptographically verifies the claim
+1. User uploads document and AI validates document type
+2. OCR extracts relevant data locally
+3. ZK proof is generated using Groth16 circuits
+4. Verifier (bank, government) creates verification request
+5. User approves sharing their proof
+6. Verifier cryptographically verifies the claim
 
 ---
 
@@ -36,6 +42,7 @@ Zero-Knowledge Proofs (ZKPs) allow one party (the prover) to prove to another pa
 
 ## Features
 
+- **AI Document Validation**: Gemini AI verifies document type before processing
 - **Zero-Knowledge Proofs**: Real Groth16 proofs using snarkjs and Circom circuits
 - **Document Types**: Aadhaar (age), Salary Slip (income), Marksheet (education), PAN Card (tax)
 - **Privacy-First**: All document processing happens locally in the browser
@@ -55,6 +62,7 @@ Zero-Knowledge Proofs (ZKPs) allow one party (the prover) to prove to another pa
 | Database | Supabase (PostgreSQL) |
 | ZK Proofs | snarkjs, Circom (Groth16/BN128) |
 | OCR | Tesseract.js |
+| AI Validation | Google Gemini 2.5 Flash |
 
 ---
 
@@ -66,6 +74,7 @@ Zero-Knowledge Proofs (ZKPs) allow one party (the prover) to prove to another pa
 - npm or yarn
 - Git
 - Supabase account ([Sign up free](https://supabase.com/))
+- Google AI API key ([Get free key](https://aistudio.google.com/apikey))
 
 ### Installation
 
@@ -87,28 +96,29 @@ cd ..
 
 ### Environment Setup
 
-1. Create a `.env.local` file in the root directory:
-
-```bash
-# Windows (PowerShell)
-New-Item -Path .env.local -ItemType File
-
-# Linux/Mac
-touch .env.local
-```
-
-2. Add your Supabase credentials to `.env.local`:
+Create a `.env.local` file in the root directory with the following variables:
 
 ```env
+# Supabase Configuration (Required)
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Google Gemini API (Required for document validation)
+NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
 ```
 
-> **Finding your Supabase credentials:**
-> 1. Go to [Supabase Dashboard](https://app.supabase.com/)
-> 2. Select your project (or create one)
-> 3. Go to Settings → API
-> 4. Copy "Project URL" and "anon public" key
+#### Getting Your API Keys:
+
+**Supabase:**
+1. Go to [Supabase Dashboard](https://app.supabase.com/)
+2. Select your project (or create one)
+3. Go to Settings → API
+4. Copy "Project URL" and "anon public" key
+
+**Gemini API:**
+1. Go to [Google AI Studio](https://aistudio.google.com/apikey)
+2. Click "Create API Key"
+3. Copy the generated key
 
 ### Database Setup
 
@@ -167,12 +177,6 @@ CREATE POLICY "allow_all_insert" ON verification_requests FOR INSERT WITH CHECK 
 CREATE POLICY "allow_all_update" ON verification_requests FOR UPDATE USING (true);
 ```
 
-### Enable Email Authentication
-
-1. In Supabase Dashboard, go to **Authentication → Providers**
-2. Ensure **Email** provider is enabled
-3. (Optional) Configure email templates in **Authentication → Email Templates**
-
 ### Run the Application
 
 ```bash
@@ -185,13 +189,6 @@ npm start
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-### Verify Installation
-
-1. Visit `http://localhost:3000` - You should see the landing page
-2. Click "Get Started" to create an account
-3. Check your email for confirmation link
-4. After confirming, login and try generating a proof
 
 ---
 
@@ -213,28 +210,12 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 │   │   └── request/          # Verification request handling
 │   ├── components/           # React components
 │   ├── context/              # Auth context
-│   └── lib/                  # Utilities (auth, supabase, zk-proof, ocr)
-```
-
----
-
-## ZK Circuits
-
-The platform uses four Circom circuits:
-
-| Circuit | Purpose | Public Inputs |
-|---------|---------|---------------|
-| ageVerification | Prove age > threshold | currentYear, ageThreshold |
-| incomeRange | Prove income in range | minIncome, maxIncome |
-| degreeVerification | Prove degree completion | minPassingPercentage |
-| panVerification | Prove tax compliance | currentYear, maxYearGap |
-
-### Building Circuits
-
-```bash
-cd circuits
-./build.sh  # Linux/Mac
-./build.ps1 # Windows PowerShell
+│   └── lib/                  # Utilities
+│       ├── auth.ts           # Authentication functions
+│       ├── supabase.ts       # Supabase client
+│       ├── zk-proof.ts       # ZK proof generation
+│       ├── ocr.ts            # OCR processing
+│       └── document-validator.ts  # AI document validation
 ```
 
 ---
@@ -254,14 +235,22 @@ cd circuits
          │                           │                           │
          ▼                           ▼                           ▼
 ┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
-│   1. SIGN UP    │       │  2. UPLOAD DOC  │       │  3. GENERATE    │
-│                 │       │                 │       │     ZK PROOF    │
-│  Email + Pass   │──────▶│  Aadhaar/PAN/   │──────▶│                 │
-│  Confirmation   │       │  Salary/Marks   │       │  Groth16/BN128  │
+│   1. SIGN UP    │       │  2. UPLOAD DOC  │       │  3. AI VALIDATE │
+│                 │       │                 │       │                 │
+│  Email + Pass   │──────▶│  Aadhaar/PAN/   │──────▶│  Gemini 2.5     │
+│  Confirmation   │       │  Salary/Marks   │       │  Flash API      │
 └─────────────────┘       └─────────────────┘       └────────┬────────┘
                                                              │
                                      ┌───────────────────────┘
                                      ▼
+                          ┌─────────────────┐
+                          │  4. OCR + ZK    │
+                          │                 │
+                          │  Tesseract.js   │
+                          │  + Groth16      │
+                          └────────┬────────┘
+                                   │
+                                   ▼
                           ┌─────────────────┐
                           │   USER VAULT    │
                           │                 │
@@ -335,62 +324,36 @@ cd circuits
          │ (No personal    │
          │  data exposed)  │
          └─────────────────┘
-
-
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                           ZK PROOF GENERATION                                    │
-└─────────────────────────────────────────────────────────────────────────────────┘
-
-  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
-  │ Document │───▶│   OCR    │───▶│  Extract │───▶│  Circom  │───▶│  Groth16 │
-  │  Upload  │    │ Process  │    │   Data   │    │  Circuit │    │   Proof  │
-  └──────────┘    └──────────┘    └──────────┘    └──────────┘    └──────────┘
-                                                       │
-                       ┌───────────────────────────────┴───────────────────┐
-                       │                                                   │
-              ┌────────┴────────┐                              ┌───────────┴───────┐
-              │  Private Input  │                              │   Public Input    │
-              │                 │                              │                   │
-              │  - Birth Year   │                              │  - Current Year   │
-              │  - Actual Income│                              │  - Age Threshold  │
-              │  - Total Marks  │                              │  - Min Income     │
-              └─────────────────┘                              └───────────────────┘
-
-
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                           SUPPORTED DOCUMENTS                                    │
-└─────────────────────────────────────────────────────────────────────────────────┘
-
-  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐   ┌─────────────┐
-  │   AADHAAR   │   │ SALARY SLIP │   │  MARKSHEET  │   │  PAN CARD   │
-  │             │   │             │   │             │   │             │
-  │  Proves:    │   │  Proves:    │   │  Proves:    │   │  Proves:    │
-  │  Age > 18   │   │  Income >   │   │  Degree     │   │  Tax        │
-  │             │   │  50,000/mo  │   │  Verified   │   │  Compliant  │
-  └─────────────┘   └─────────────┘   └─────────────┘   └─────────────┘
 ```
 
-## User Flow
 
-### For Users
-1. Sign up with email (confirmation required)
-2. Upload document (Aadhaar, Salary Slip, etc.)
-3. ZK proof is generated locally
-4. Proof stored in vault (expires in 7 days)
-5. Share proof with verifiers when requested
 
-### For Verifiers
-1. Go to Verifier Portal
-2. Select organization (demo mode)
-3. Create verification request
-4. Share link with user
-5. User approves, verifier sees result
-6. Cryptographically verify the proof
+## ZK Proof Generation Flow
+
+```
+  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
+  │ Document │───▶│  Gemini  │───▶│   OCR    │───▶│  Circom  │───▶│  Groth16 │
+  │  Upload  │    │ Validate │    │ Extract  │    │  Circuit │    │   Proof  │
+  │ (PNG/JPG)│    │   Type   │    │   Data   │    │          │    │          │
+  └──────────┘    └──────────┘    └──────────┘    └──────────┘    └──────────┘
+```
+
+---
+
+## Supported Documents
+
+| Document | Proof Generated | Accepted Formats |
+|----------|-----------------|------------------|
+| Aadhaar Card | Age > 18 | PNG, JPG, JPEG |
+| Salary Slip | Income > 50,000/mo | PNG, JPG, JPEG |
+| Marksheet | Degree Verified | PNG, JPG, JPEG |
+| PAN Card | Tax Compliant | PNG, JPG, JPEG |
 
 ---
 
 ## Security & Privacy
 
+- **AI Validation**: Gemini verifies document type before processing
 - **Local Processing**: Documents never leave the user's browser
 - **Zero-Knowledge**: Verifiers only see the claim result, not the data
 - **Groth16 Proofs**: Mathematically sound cryptographic proofs
@@ -399,20 +362,64 @@ cd circuits
 
 ---
 
-## API Reference
+## Estimated Project Cost
 
-### Authentication
-- `signUp(email, password, name)` - Create account
-- `signIn(email, password)` - Login
-- `signOut()` - Logout
-- `getCurrentUser()` - Get current user
+| Component | Service | Cost (INR) |
+|-----------|---------|------------|
+| Hosting | Vercel (Free Tier) | ₹0 |
+| Database | Supabase (Free Tier - 500MB) | ₹0 |
+| Authentication | Supabase Auth (Free - 50K MAU) | ₹0 |
+| AI Validation | Gemini API (Free Tier - 60 RPM) | ₹0 |
+| Domain | Optional (.in domain) | ₹500-800/year |
+| **Total MVP** | | **₹0 - ₹800** |
 
-### ZK Proofs
-- `generateZKProof(input, onProgress)` - Generate proof
-- `verifyZKProof(proof, documentType)` - Verify proof
+### Production Scale Estimates
 
-### OCR
-- `performOCR(file, documentType, onProgress)` - Extract text from document
+| Scale | Users/Month | Estimated Cost |
+|-------|-------------|----------------|
+| Startup | 1,000 | ₹0 (Free tiers) |
+| Growth | 10,000 | ₹2,000-5,000/mo |
+| Enterprise | 100,000+ | ₹15,000-50,000/mo |
+
+---
+
+## Future Scope: AkshayaVault SDK
+
+### Vision
+
+Transform AkshayaVault into an SDK that organizations can integrate into their existing systems for seamless ZK-based verification.
+
+### SDK Features (Planned)
+
+```javascript
+// Example SDK Usage
+import { AkshayaVault } from '@akshayavault/sdk';
+
+const vault = new AkshayaVault({
+  apiKey: 'your-api-key',
+  organizationId: 'org-123'
+});
+
+// Request verification from user
+const request = await vault.createVerificationRequest({
+  proofType: 'age',
+  attribute: 'Age > 18',
+  purpose: 'Account verification',
+  callbackUrl: 'https://yourapp.com/verify-callback'
+});
+
+// Verify a proof
+const result = await vault.verifyProof(proofId);
+// { valid: true, attribute: 'Age > 18', timestamp: '...' }
+```
+
+### Integration Benefits
+
+- **Plug & Play**: Simple npm install and configure
+- **No ZK Expertise Required**: SDK handles all cryptographic operations
+- **Compliance Ready**: Built-in audit trails and logging
+- **Multi-Platform**: Web, mobile, and backend support
+- **Cost Effective**: Pay-per-verification pricing model
 
 ---
 
@@ -426,14 +433,8 @@ cd circuits
 
 ---
 
-## License
-
-MIT License - see LICENSE file for details
-
----
-
 ## Team zeroblink
 
-Built by [@Sanath0106](https://github.com/Sanath0106) and [@jetsu03](https://github.com/jetsu03)
+Built by [@Sanath0106](https://github.com/Sanath0106) (Sanath R) and [@jetsu03](https://github.com/jetsu03) (Neha Honniganur)
 
 GFG ByteQuest Hackathon 2025

@@ -154,66 +154,71 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile menu */}
-      <div
-        className={cn(
-          "md:hidden fixed inset-0 top-16 bg-dark-950/98 backdrop-blur-xl transition-all duration-300 z-40",
-          isOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
-        )}
-      >
-        <div className="px-6 py-8 space-y-6">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="block text-lg text-gray-300 hover:text-white py-2"
-              onClick={() => setIsOpen(false)}
-            >
-              {link.label}
-            </Link>
-          ))}
-          <div className="pt-6 border-t border-green-500/10 space-y-3">
-            {user ? (
-              <>
-                <div className="flex items-center gap-2 text-gray-400 py-2">
-                  <User className="w-4 h-4" />
-                  <span className="text-sm">{user.name || user.email}</span>
-                </div>
-                <Link href="/vault" onClick={() => setIsOpen(false)}>
-                  <Button className="w-full">
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    My Vault
+      {/* Mobile menu overlay */}
+      {isOpen && (
+        <div 
+          className="md:hidden fixed inset-0 top-16 bg-dark-950 z-[100]"
+          style={{ height: 'calc(100vh - 64px)' }}
+        >
+          <div className="h-full overflow-y-auto px-6 py-8 space-y-4">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="block text-lg text-gray-300 hover:text-white py-3 border-b border-green-500/10"
+                onClick={() => setIsOpen(false)}
+              >
+                {link.label}
+              </Link>
+            ))}
+            <div className="pt-6 space-y-3">
+              {user ? (
+                <>
+                  <div className="flex items-center gap-3 text-gray-400 py-3 border-b border-green-500/10">
+                    <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-medium">
+                      {getInitials(user.name, user.email)}
+                    </div>
+                    <div>
+                      <p className="text-white text-sm font-medium">{user.name || 'User'}</p>
+                      <p className="text-xs text-gray-500">{user.email}</p>
+                    </div>
+                  </div>
+                  <Link href="/vault" onClick={() => setIsOpen(false)}>
+                    <Button className="w-full mt-4">
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      My Vault
+                    </Button>
+                  </Link>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => {
+                      handleSignOut();
+                      setIsOpen(false);
+                    }}
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign Out
                   </Button>
-                </Link>
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => {
-                    handleSignOut();
-                    setIsOpen(false);
-                  }}
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Sign Out
-                </Button>
-              </>
-            ) : (
-              <>
-                <Link href="/login" onClick={() => setIsOpen(false)}>
-                  <Button variant="outline" className="w-full">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link href="/signup" onClick={() => setIsOpen(false)}>
-                  <Button className="w-full">
-                    Get Started
-                  </Button>
-                </Link>
-              </>
-            )}
+                </>
+              ) : (
+                <>
+                  <Link href="/login" onClick={() => setIsOpen(false)}>
+                    <Button variant="outline" className="w-full">
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link href="/signup" onClick={() => setIsOpen(false)}>
+                    <Button className="w-full">
+                      Get Started
+                    </Button>
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </nav>
   );
 }
